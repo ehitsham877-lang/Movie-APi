@@ -13,7 +13,23 @@ def _parse_ref(ref: str) -> tuple[str, str]:
     return provider, title_id
 
 
+def _normalize_provider(provider: str | None) -> str | None:
+    if provider is None:
+        return None
+    cleaned = provider.strip()
+    if not cleaned:
+        return None
+    if cleaned.lower() in {"none", "null"}:
+        return None
+    if cleaned in {"{}", "[]"}:
+        return None
+    if cleaned.startswith("{") and cleaned.endswith("}"):
+        return None
+    return cleaned
+
+
 def _pick_provider(provider: str | None) -> str:
+    provider = _normalize_provider(provider)
     if provider:
         return provider
     if registry.get("tmdb"):
@@ -50,4 +66,3 @@ async def lookup(
     ratings = await provider_for_title.get_ratings(title_id=title_id)
     trailers = await provider_for_title.get_trailers(title_id=title_id)
     return TitleFullResponse(title=title, credits=credits, ratings=ratings, trailers=trailers)
-

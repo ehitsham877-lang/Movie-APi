@@ -6,7 +6,23 @@ from app.services.registry import registry
 router = APIRouter()
 
 
+def _normalize_provider(provider: str | None) -> str | None:
+    if provider is None:
+        return None
+    cleaned = provider.strip()
+    if not cleaned:
+        return None
+    if cleaned.lower() in {"none", "null"}:
+        return None
+    if cleaned in {"{}", "[]"}:
+        return None
+    if cleaned.startswith("{") and cleaned.endswith("}"):
+        return None
+    return cleaned
+
+
 def _pick_provider(provider: str | None) -> str:
+    provider = _normalize_provider(provider)
     if provider:
         return provider
     if registry.get("tmdb"):
@@ -141,4 +157,3 @@ async def tv_airing_today(
         raise HTTPException(status_code=404, detail="Unknown provider")
     results = await provider_obj.list_titles(category="airing_today", title_type=TitleType.tv, limit=limit)
     return SearchResponse(results=results)
-
